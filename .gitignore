@@ -1,0 +1,9 @@
+*.vs
+Intermediate
+Saved
+Binaries
+ImportedAssets
+
+!*/Saved/Config/Windows/*
+
+*.sln
