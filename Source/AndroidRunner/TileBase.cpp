@@ -35,7 +35,7 @@ ATileBase::ATileBase()
 	Collision->SetCollisionObjectType(ECollisionChannel::ECC_WorldStatic);
 	Collision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	Collision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-	Collision->SetRelativeLocation(FVector(3000.f, 0.f, 0.f));
+	Collision->SetRelativeLocation(FVector(8000.f, 0.f, 0.f));
 	Collision->SetRelativeScale3D(FVector(4.f, 25.f, 25.f));
 }
 
@@ -48,13 +48,9 @@ void ATileBase::BeginPlay()
 void ATileBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ATileBase::OnExitTile(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	auto GM = MyLib::GetEndlessGM(GetWorld());
-	check(GM);
-	GM->SpawnTile();
 	Destroy();
 }

@@ -7,6 +7,7 @@
 #include "MyLib.h"
 #include "EndlessGM.h"
 #include "PickableSpawner.h"
+#include "TileBase.h"
 
 // Sets default values
 APlayerInteractableObject::APlayerInteractableObject()
@@ -17,14 +18,22 @@ APlayerInteractableObject::APlayerInteractableObject()
 	Root = CreateDefaultSubobject<USceneComponent>("Root");
 	RootComponent = Root;
 
+	NextSpawnX = CreateDefaultSubobject<USceneComponent>("NextSpawnX");
+	NextSpawnX->SetupAttachment(RootComponent);
+	NextSpawnX->SetRelativeLocation(FVector(2000.f, 0.f, 0.f));
+
+	NextTileSpawnOffset = CreateDefaultSubobject<USceneComponent>("NextTileSpawnOffset");
+	NextTileSpawnOffset->SetupAttachment(RootComponent);
+	
+
 	Collision = CreateDefaultSubobject <UBoxComponent>("Collision");
 	Collision->SetupAttachment(RootComponent);
 	Collision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Collision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	Collision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	Collision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-	Collision->SetRelativeLocation(FVector(4000.f, 0.f, 0.f));
-	Collision->SetRelativeScale3D(FVector(8.f, 17.f, 17.f));
+	Collision->SetRelativeLocation(FVector(12000.f, 0.f, 0.f));
+	Collision->SetRelativeScale3D(FVector(4.f, 32.f, 24.f));
 
 }
 
@@ -89,6 +98,7 @@ void APlayerInteractableObject::Tick(float DeltaTime)
 
 void APlayerInteractableObject::OnBeginOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
+	GM->spawnNext();
 	UE_LOG(SpawningLog, Warning, TEXT("%s being destroyed"), *GetName());
 	Destroy();
 }

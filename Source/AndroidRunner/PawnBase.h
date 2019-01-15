@@ -75,6 +75,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 		class UStaticMeshComponent* GetCover() { return cover; }
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetHealth() { return health; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetArmor() { return armor; }
+
 	int32 health = 5;
 	int32 armor = 0;
 	float armorExpirationTime = 0.f;

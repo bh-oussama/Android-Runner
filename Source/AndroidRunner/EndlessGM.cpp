@@ -21,43 +21,6 @@ AEndlessGM::AEndlessGM() {
 	PrimaryActorTick.bStartWithTickEnabled = true;
 }
 
-void AEndlessGM::SpawnAddition()
-{
-	auto toSpawn = NextSpawnable();
-	if (toSpawn) {
-		FTransform transform;
-		transform.SetLocation(FVector(SpawnX, 0.f, 0.f));
-		auto spawned = GetWorld()->SpawnActor<APlayerInteractableObject>(toSpawn, transform);
-		SpawnX = spawned->Collision->GetComponentLocation().X;
-		for (auto obj : spawned->nextObjects) {
-			objectsToSpawn.AddUnique(obj);
-		}
-		for (auto one : spawned->toNotSpawnNext) {
-			objectsToSpawn.Remove(one);
-		}
-		for (auto spline : spawned->GetSplines()) {
-			SpawnCoinsAlongSpline(spline);
-		}
-		for (auto sceneComp : spawned->GetPickablesLocation()) {
-			specialPickableLocations.Add(sceneComp->GetComponentLocation());
-		}
-		if (PickablesSpawningTime < GetWorld()->GetTimeSeconds() && spawned->GetPickablesLocation().Num() > 0) {
-			for (auto location : spawned->GetPickablesLocation()) {
-				FTransform transform;
-				transform.SetLocation(location->GetComponentLocation());
-				auto pickable = GetWorld()->SpawnActor<APickableBase>(GetRandomSpecialPickable(), transform);
-				spawnedObjects.Add(pickable);
-				UE_LOG(SpawningLog, Warning, TEXT("spawned Pickable %s"), *pickable->GetName());
-			}
-			UpdatePickablesSpawningTime();
-		}
-		UE_LOG(SpawningLog, Warning, TEXT("spawned %s"), *spawned->GetName());
-	}
-	else {
-		UE_LOG(SpawningLog, Warning, TEXT("no object to spawn"));
-	}
-}
-
 void AEndlessGM::SpawnCoinsAlongSpline(USplineComponent* spline)
 {
 	check(currCoinClass);
@@ -84,11 +47,8 @@ TSubclassOf<APlayerInteractableObject> AEndlessGM::NextSpawnable()
 
 void AEndlessGM::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
-	/*
-		if (GetWorld()->GetTimeSeconds() > currModeEndInTime) {
-			SwitchToNextMode();
-		}
-		*/
+
+	// switch mode when mode's end is reached by the player
 	if (Pawn->GetActorLocation().X > currModeEndX)
 		SwitchToNextMode();
 
@@ -111,7 +71,7 @@ void AEndlessGM::Tick(float DeltaTime) {
 	objectsToDelete.Empty();
 	if (spawnedObjects.Num() > 0) {
 		for (auto obj : spawnedObjects) {
-			if (obj->GetActorLocation().X < playerX - OBJECT_SAFE_DISTANCE_TO_PLAYER_TO_DESTROY) {
+			if (obj && obj->GetActorLocation().X < playerX - OBJECT_SAFE_DISTANCE_TO_PLAYER_TO_DESTROY) {
 				objectsToDelete.Add(obj);
 				obj->Destroy();
 			}
@@ -122,10 +82,8 @@ void AEndlessGM::Tick(float DeltaTime) {
 	for (auto obj : objectsToDelete)
 		spawnedObjects.Remove(obj);
 
-	// spawning EnvStatic and Obstacle
-	if (playerX + RANGE_OF_VIEW > SpawnX) {
-		SpawnAddition();
-	}
+	while (playerX + RANGE_OF_VIEW > SpawnX) spawnNext();
+
 }
 
 void AEndlessGM::BeginPlay()
@@ -147,11 +105,17 @@ void AEndlessGM::BeginPlay()
 	UpdatePickablesSpawningTime();
 
 	// Spawning initial tiles
-	NewSpawnTransform.SetLocation(FVector(-500, 0, 0));
+	NewSpawnTransform.SetLocation(FVector(-2000, 0, 0));
 	for (int i = 0; i < INTIAL_NUMBER_OF_TILES; i++)
 	{
 		SpawnTile();
 	}
+
+	for (int i = 0; i < 5; i++)
+	{
+		spawnNext();
+	}
+
 
 	if (StaticModeBackgroundMusic)
 		UGameplayStatics::PlaySound2D(
@@ -202,8 +166,11 @@ void AEndlessGM::SpawnTransitionTiles(TArray<TSubclassOf<ATileBase>> tiles)
 {
 	for (auto tileClass : tiles) {
 		UE_LOG(LogTemp, Warning, TEXT("spawning transition tile"));
-		SpawnX = SpawnTile(tileClass)->AttachementPoint->GetComponentLocation().X + 4000.f;
+		SpawnX = SpawnTile(tileClass)->AttachementPoint->GetComponentLocation().X + tiles.Num() * 2000.f;
+
 	}
+	int32 count = tiles.Num();
+	while (count-- > 0) SpawnTile();
 }
 
 TSubclassOf<APickableBase> AEndlessGM::GetRandomSpecialPickable()
@@ -241,32 +208,74 @@ void AEndlessGM::UpdatePickablesSpawningTime()
 
 ATileBase* AEndlessGM::SpawnTile(TSubclassOf<ATileBase> tileClass)
 {
+	FActorSpawnParameters param = FActorSpawnParameters();
+	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	UWorld* const World = GetWorld();
+	check(World);
+
+	TSubclassOf<ATileBase> TileClass = nullptr;
 	if (tileClass) {
-		FActorSpawnParameters param = FActorSpawnParameters();
-		param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		UWorld* const World = GetWorld();
-		check(World);
-
-		auto Tile = GetWorld()->SpawnActor<ATileBase>(tileClass, NewSpawnTransform);
-		check(Tile);
-		NewSpawnTransform = Tile->AttachementPoint->GetComponentTransform();
-		UE_LOG(SpawningLog, Warning, TEXT("spawned %s"), *Tile->GetName());
-		return Tile;
+		TileClass = tileClass;
 	}
 	else {
 		check(currTileClass);
-		FActorSpawnParameters param = FActorSpawnParameters();
-		param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		UWorld* const World = GetWorld();
-		check(World);
-
-		auto Tile = GetWorld()->SpawnActor<ATileBase>(currTileClass, NewSpawnTransform);
-		check(Tile);
-		NewSpawnTransform = Tile->AttachementPoint->GetComponentTransform();
-
-		UE_LOG(SpawningLog, Warning, TEXT("spawned %s"), *Tile->GetName());
-		return Tile;
+		TileClass = currTileClass;
 	}
+
+	auto Tile = GetWorld()->SpawnActor<ATileBase>(TileClass, NewSpawnTransform);
+	check(Tile);
+	NewSpawnTransform = Tile->AttachementPoint->GetComponentTransform();
+	UE_LOG(SpawningLog, Warning, TEXT("spawned %s"), *Tile->GetName());
+	return Tile;
+
+}
+
+void AEndlessGM::spawnNext(TSubclassOf<APlayerInteractableObject> object)
+{
+	if (!object) object = NextSpawnable();
+	if (!object) return;
+
+	FTransform transform;
+	transform.SetLocation(FVector(SpawnX, 0.f, 0.f));
+	auto spawned = GetWorld()->SpawnActor<APlayerInteractableObject>(object, transform);
+
+	// updating SpawnX for next object spawn location.X
+	SpawnX += spawned->XLength;
+
+	// spawning tiles for this object
+	if (spawned->customTileClass) SpawnTile(spawned->customTileClass);
+	else
+	{
+		int32 tileCount = spawned->XLength / TILE_LENGTH;
+		while (tileCount-- > 0) SpawnTile();
+	}
+
+	// adding objects that can be spawned next
+	for (auto obj : spawned->nextObjects) {
+		objectsToSpawn.AddUnique(obj);
+	}
+
+	// removing objects that should not be spawned next
+	for (auto one : spawned->toNotSpawnNext) {
+		objectsToSpawn.Remove(one);
+	}
+
+	// spawning coins along spawned object splines
+	for (auto spline : spawned->GetSplines()) {
+		SpawnCoinsAlongSpline(spline);
+	}
+
+	// if it is time to spawn a special pickable, spawn one 
+	if (PickablesSpawningTime < GetWorld()->GetTimeSeconds() && spawned->GetPickablesLocation().Num() > 0) {
+		for (auto location : spawned->GetPickablesLocation()) {
+			FTransform transform;
+			transform.SetLocation(location->GetComponentLocation());
+			auto pickable = GetWorld()->SpawnActor<APickableBase>(GetRandomSpecialPickable(), transform);
+			spawnedObjects.Add(pickable);
+			UE_LOG(SpawningLog, Warning, TEXT("spawned Pickable %s"), *pickable->GetName());
+		}
+		UpdatePickablesSpawningTime();
+	}
+	UE_LOG(SpawningLog, Warning, TEXT("spawned %s"), *spawned->GetName());
 }

@@ -9,4 +9,5 @@ void AShieldBase::PawnOverlap(UPrimitiveComponent * OverlappedComponent, AActor 
 	auto playerPawn = Cast<APawnBase>(GetWorld()->GetFirstPlayerController()->GetPawn());
 	playerPawn->armor = FMath::Max(Armor, playerPawn->armor);
 	playerPawn->armorExpirationTime = GetWorld()->GetTimeSeconds() + Duration;
+	Destroy();
 }

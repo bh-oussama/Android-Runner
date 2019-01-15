@@ -4,9 +4,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "EndlessGM.generated.h"
 
-#define INTIAL_NUMBER_OF_TILES 15
-#define RANGE_OF_VIEW 10000.f
+#define INTIAL_NUMBER_OF_TILES 5
+#define RANGE_OF_VIEW 12000.f
 #define OBJECT_SAFE_DISTANCE_TO_PLAYER_TO_DESTROY 9000.f
+#define TILE_LENGTH 2000
 
 UENUM(BlueprintType)
 enum Mode {
@@ -14,15 +15,6 @@ enum Mode {
 	Chinese = 1		UMETA(DisplayName = "Chinese"),
 	Scary = 2		UMETA(DisplayName = "Scray"),
 };
-
-// TODO:	make the shield work
-
-// TODO:	add sound to the game
-
-// TODO:	clean code to simulate in editor with no ERROR
-
-// TODO:	Add mode manager (changes the used tile class for this class)
-//				*tile class can be changed between modes
 
 /**
  * EndlessGM is the base game mode for any game mode that supports tiles and endless spawning of tiles, envStatics, obstacles and pickables.
@@ -37,7 +29,7 @@ public:
 
 	bool bIsMagnetActivated = false;
 	int32 CollectedCoinsCount = 0;
-	float SpawnX = 4000.f;
+	float SpawnX = 10000.f;
 	float MagnetRange = 0.f;
 	float MagnetDeactivationTime = 0.f;
 	float MagnetPower = 0.f;
@@ -50,6 +42,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 		virtual ATileBase* SpawnTile(TSubclassOf<ATileBase> tileClass = nullptr);
 
+	UFUNCTION(BlueprintCallable)
+		virtual void spawnNext(TSubclassOf<APlayerInteractableObject> object = nullptr);
 
 		/* ------------------- STATIC MODE CONFIG ------------------- */
 
@@ -121,10 +115,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Modes | Scary")
 		TSubclassOf<class ATileBase> ScaryTileClass = nullptr;
-
-	// spawns a tile and all complementary objects (Complementary objects like pickables, and envStatics or obstacles)
-	UFUNCTION(BlueprintCallable)
-		void SpawnAddition();
 
 	UFUNCTION(BlueprintCallable)
 		void SpawnCoinsAlongSpline(USplineComponent* spline);
