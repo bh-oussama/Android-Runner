@@ -10,6 +10,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
+#include "Curves/CurveFloat.h"
 
 APawnBase::APawnBase()
 {
@@ -29,12 +30,17 @@ APawnBase::APawnBase()
 	cover->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	cover->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	cover->SetNotifyRigidBodyCollision(true);
+
+	// disabling movement component for the customization.
+	GetCharacterMovement()->Deactivate();
 }
 
 void APawnBase::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &APawnBase::OnHitObstacle);
+	currMaxAcceleration = maxAcceleration;
+	currMaxSpeed = maxSpeed;
 }
 
 void APawnBase::Tick(float DeltaTime)
@@ -100,19 +106,43 @@ void APawnBase::Tick(float DeltaTime)
 		bScreenTouched
 	);
 
-	// applying brakes
+	// update movement speed applying brakes
 	float mvnCompSpeed = GetCharacterMovement()->GetMaxSpeed();
-	if (bScreenTouched || bDecelerating) {
+	if (bScreenTouched | bDecelerating) {	// applying brakes
 		if (mvnCompSpeed > 300.f) {
 			GetCharacterMovement()->MaxWalkSpeed = -brakesStrength * DeltaTime + mvnCompSpeed;
 			if (mvnCompSpeed < 300.f) GetCharacterMovement()->MaxWalkSpeed = 300.f;
 		}
 	}
-	else {
+	else {	// adding speed to reset speed
 		GetCharacterMovement()->MaxWalkSpeed = FMath::Min(
-			maxSpeed,
-			mvnCompSpeed + maxAcceleration * DeltaTime
+			currMaxSpeed,
+			mvnCompSpeed + currMaxAcceleration * DeltaTime
 		);
+	}
+
+	// deactivating turbo if it has expired
+	if (hasBooster && GetWorld()->GetTimeSeconds() > BoosterExpirationTime) {
+		hasBooster = false;
+		currMaxSpeed = maxSpeed;
+		currMaxAcceleration = maxAcceleration;
+	}
+
+	if (!hasBooster && currMaxSpeed > maxSpeed + 5.f)
+	{
+		currMaxSpeed = FMath::FInterpTo(currMaxSpeed, maxSpeed, DeltaTime, maxAcceleration * 1.5f);
+	}
+
+	// when health is low control is bad
+	if (health < 15.f)
+	{
+		float noiseFactor = 1.f - health / 15;
+		float noise = noiseFactor * 14.f;
+		currNoise = FMath::FInterpTo(currNoise,FMath::Cos(GetWorld()->GetTimeSeconds()*3.14f*noise), DeltaTime, 10.f);
+		AddMovementInput(
+				currNoise,
+				tiltSensitivity
+			);
 	}
 }
 
@@ -147,31 +177,39 @@ void APawnBase::Decelerate(float Rate)
 
 void APawnBase::OnHitObstacle(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, FVector NormalImpulse, const FHitResult & Hit)
 {
-	if (HittedSomething) return;
-	HittedSomething = true;
-	if (OtherComp->GetCollisionObjectType() == ECollisionChannel::ECC_GameTraceChannel1) {
-		// TODO: deal damage on hit
-		//			applied damage should be calculated from movement direction & velocity
+	if (OtherComp->GetCollisionObjectType() == ECollisionChannel::ECC_GameTraceChannel1) { // other comp is an obstacle
 
-		// deactivate movements if the player has no more armor & health
-		if (armor == 0 && health <= 0)
+		// preventing applying damage twice in one frame
+		if (HittedSomething) return;
+		HittedSomething = true;
+
+		// calculating hit angle
+		float result = FVector::DotProduct(Hit.ImpactNormal, FVector(1.f, 0.f, 0.f));
+		float acos = FMath::RadiansToDegrees(FMath::Acos(result));
+		UE_LOG(LogTemp, Warning, TEXT("hitevent: hit angle: %f"), acos);
+
+		// calculating damage to deal
+		float damage2apply = maxDamage * damageByAngleFactorCurve->GetFloatValue(acos);
+		UE_LOG(LogTemp, Warning, TEXT("hitevent: damage2apply: %f"), damage2apply);
+
+		// applying damage
+		if (armor >= damage2apply) armor -= damage2apply;
+		else { health -= damage2apply - armor; armor = 0; }
+
+		// deactivating movement when (health <= 0)
+		if (health <= 0)
 		{
 			GetCharacterMovement()->Deactivate();
 			return;
 		}
-		FVector impulse = Hit.ImpactNormal* (BounceForce + GetVelocity().Size()) + FVector(0.f, 0.f, BounceDirectionUpAdditive);
-		/*
-		UKismetSystemLibrary::DrawDebugLine(
-			GetWorld(),
-			Hit.ImpactPoint,
-			Hit.ImpactPoint + impulse,
-			FLinearColor::Blue,
-			10.f,
-			5.f
-		);
-		*/
-		GetCharacterMovement()->AddImpulse(impulse);
-		armor = 0;
+
+		// applying hit impulse
+		if (acos > 100)
+		{
+			FVector impulse = Hit.ImpactNormal* (BounceForce + GetVelocity().Size()) + FVector(0.f, 0.f, BounceDirectionUpAdditive);
+			GetCharacterMovement()->AddImpulse(impulse);
+		}
+		UE_LOG(LogTemp, Warning, TEXT("hitevent: reporting state: %f/%f"), health, armor);
+
 	}
 }
-

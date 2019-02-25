@@ -49,8 +49,8 @@ void AEndlessGM::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
 	// switch mode when mode's end is reached by the player
-	if (Pawn->GetActorLocation().X > currModeEndX)
-		SwitchToNextMode();
+	//if (Pawn->GetActorLocation().X > currModeEndX)
+	//	SwitchToNextMode();
 
 	// updating VARs relative to magnet
 	if (bIsMagnetActivated) {
@@ -71,7 +71,7 @@ void AEndlessGM::Tick(float DeltaTime) {
 	objectsToDelete.Empty();
 	if (spawnedObjects.Num() > 0) {
 		for (auto obj : spawnedObjects) {
-			if (obj && obj->GetActorLocation().X < playerX - OBJECT_SAFE_DISTANCE_TO_PLAYER_TO_DESTROY) {
+			if (obj != nullptr && obj->GetActorLocation().X < playerX - OBJECT_SAFE_DISTANCE_TO_PLAYER_TO_DESTROY) {
 				objectsToDelete.Add(obj);
 				obj->Destroy();
 			}
@@ -233,6 +233,11 @@ ATileBase* AEndlessGM::SpawnTile(TSubclassOf<ATileBase> tileClass)
 
 void AEndlessGM::spawnNext(TSubclassOf<APlayerInteractableObject> object)
 {
+	if (SpawnX > currModeEndX) {
+		SwitchToNextMode();
+		return;
+	}
+	
 	if (!object) object = NextSpawnable();
 	if (!object) return;
 

@@ -54,11 +54,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 		float brakesStrength = 300.f;
 
+	/* 
+	*determines the maximum speed with which the pawn should mouve
+	*this variable changes in runtime to give the pawn its maximum speed and currMaxSpeed is used to follow MaxSpeed and add Turbo Boost when it is applied	
+	*/
 	UPROPERTY(EditAnywhere, Category = "Movement")
 		float maxSpeed = 1800.f;
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
 		float maxAcceleration = 200.f;
+
+	UPROPERTY(EditAnywhere, Category = "DamageSimulation")
+		UCurveFloat* damageByAngleFactorCurve = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "DamageSimulation")
+		float maxDamage = 25;
 
 	UFUNCTION()
 		void Tilt(float Rate);
@@ -76,14 +86,27 @@ public:
 		class UStaticMeshComponent* GetCover() { return cover; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetHealth() { return health; }
+		float GetHealth() { return health; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetArmor() { return armor; }
+		float GetArmor() { return armor; }
 
-	int32 health = 5;
-	int32 armor = 0;
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		bool GetIsPlaying() { return isPlaying; }
+
+	UFUNCTION(BlueprintCallable)
+		void SetIsPlaying(bool isPlaying) { this->isPlaying = isPlaying; }
+
+	float health = 100;
+	float armor = 0;
 	float armorExpirationTime = 0.f;
+	bool hasBooster = false;
+	float BoosterExpirationTime = 0.f;
+	float currMaxSpeed = 0.f;
+	float currMaxAcceleration = 0.f;
+	bool isPlaying = false;
+	float currNoise = 0;
+
 private:
 	float deltaTime = 0.f;
 	FVector lastLocation = FVector(0);
