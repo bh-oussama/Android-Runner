@@ -25,12 +25,12 @@ APickableBase::APickableBase()
 
 float APickableBase::DP_LastminCurrent_LastminFirst()
 {
-	return FVector::DotProduct(LastLocation - Mesh->RelativeLocation, LastLocation - FirstLocation);
+	return FVector::DotProduct(LastLocation - Mesh->GetRelativeLocation(), LastLocation - FirstLocation);
 }
 
 bool APickableBase::OutOfRange()
 {
-	FVector curr2last = LastLocation - Mesh->RelativeLocation;
+	FVector curr2last = LastLocation - Mesh->GetRelativeLocation();
 	FVector first2last = LastLocation - FirstLocation;
 	return FVector::DotProduct(curr2last, first2last) > 0 && (curr2last.Size() < first2last.Size());
 }
@@ -48,13 +48,13 @@ void APickableBase::Tick(float DeltaTime)
 	}
 	if (DoesMove) {
 		if (bFirst2Last) {
-			Mesh->SetRelativeLocation(Mesh->RelativeLocation + MovementSpeed * DeltaTime);
+			Mesh->SetRelativeLocation(Mesh->GetRelativeLocation() + MovementSpeed * DeltaTime);
 			if (OutOfRange()) {
 				Mesh->SetRelativeLocation(LastLocation);
 			}
 		}
 		else {
-			Mesh->SetRelativeLocation(Mesh->RelativeLocation - MovementSpeed * DeltaTime);
+			Mesh->SetRelativeLocation(Mesh->GetRelativeLocation() - MovementSpeed * DeltaTime);
 			if (OutOfRange()) {
 				Mesh->SetRelativeLocation(FirstLocation);
 			}

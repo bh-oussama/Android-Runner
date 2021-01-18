@@ -76,7 +76,7 @@ void APawnBase::Tick(float DeltaTime)
 		staticRotation = UKismetMathLibrary::MakeRotFromXZ(FVector(1.f, 0.f, 0.f), hitResult.Normal);
 		FQuat AQuat = FQuat(staticRotation);
 		FQuat BQuat = FQuat(tiltRotation);
-		calculatedRotation = FRotator(BQuat*AQuat);
+		calculatedRotation = FRotator(BQuat * AQuat);
 		newRotation = UKismetMathLibrary::RInterpTo(
 			GetActorRotation(),
 			calculatedRotation,
@@ -86,13 +86,13 @@ void APawnBase::Tick(float DeltaTime)
 		SetActorRotation(newRotation);
 		auto camera = Cast<UCameraComponent>(GetComponentByClass(UCameraComponent::StaticClass()));
 		if (camera) {
-			camera->SetRelativeRotation(FRotator(0.f, 0.f, tiltRate*CAMERA_TILT));
+			camera->SetRelativeRotation(FRotator(0.f, 0.f, tiltRate * CAMERA_TILT));
 		}
 	}
 
 	// adding wheel rotation
 	wheel->AddLocalRotation(FRotator(
-		GetVelocity().X / (wheelRadius*-4.f),
+		GetVelocity().X / (wheelRadius * -4.f),
 		0.f,
 		0.f
 	));
@@ -138,11 +138,8 @@ void APawnBase::Tick(float DeltaTime)
 	{
 		float noiseFactor = 1.f - health / 15;
 		float noise = noiseFactor * 14.f;
-		currNoise = FMath::FInterpTo(currNoise,FMath::Cos(GetWorld()->GetTimeSeconds()*3.14f*noise), DeltaTime, 10.f);
-		AddMovementInput(
-				currNoise,
-				tiltSensitivity
-			);
+		currNoise = FMath::FInterpTo(currNoise, FMath::Cos(GetWorld()->GetTimeSeconds() * 3.14f * noise), DeltaTime, 10.f);
+		AddMovementInput(GetActorRightVector(), currNoise);
 	}
 }
 
@@ -175,7 +172,7 @@ void APawnBase::Decelerate(float Rate)
 	bDecelerating = (Rate < 0.f);
 }
 
-void APawnBase::OnHitObstacle(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, FVector NormalImpulse, const FHitResult & Hit)
+void APawnBase::OnHitObstacle(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (OtherComp->GetCollisionObjectType() == ECollisionChannel::ECC_GameTraceChannel1) { // other comp is an obstacle
 
@@ -206,7 +203,7 @@ void APawnBase::OnHitObstacle(UPrimitiveComponent * HitComponent, AActor * Other
 		// applying hit impulse
 		if (acos > 100)
 		{
-			FVector impulse = Hit.ImpactNormal* (BounceForce + GetVelocity().Size()) + FVector(0.f, 0.f, BounceDirectionUpAdditive);
+			FVector impulse = Hit.ImpactNormal * (BounceForce + GetVelocity().Size()) + FVector(0.f, 0.f, BounceDirectionUpAdditive);
 			GetCharacterMovement()->AddImpulse(impulse);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("hitevent: reporting state: %f/%f"), health, armor);

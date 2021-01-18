@@ -42,11 +42,11 @@ void AObstacleBase::Tick(float DeltaTime)
 		{
 			for (auto mesh : StaticMeshs)
 			{
-				mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, mesh->RelativeLocation.Z + VerticalMovementSpeed * DeltaTime));
-				if (mesh->RelativeLocation.Z >= MaxZ)
+				mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, mesh->GetRelativeLocation().Z + VerticalMovementSpeed * DeltaTime));
+				if (mesh->GetRelativeLocation().Z >= MaxZ)
 				{
 					goingUp = false;
-					mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, MaxZ));
+					mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, MaxZ));
 				}
 			}
 		}
@@ -56,23 +56,23 @@ void AObstacleBase::Tick(float DeltaTime)
 				for (auto mesh : StaticMeshs)
 				{
 					fallingSpeed += GravityScale * 981.f * DeltaTime;
-					mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, mesh->RelativeLocation.Z - fallingSpeed));
-					if (mesh->RelativeLocation.Z <= MinZ)
+					mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, mesh->GetRelativeLocation().Z - fallingSpeed));
+					if (mesh->GetRelativeLocation().Z <= MinZ)
 					{
 						goingUp = true;
 						fallingSpeed = 0.f;
-						mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, MinZ));
+						mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, MinZ));
 					}
 				}
 			}
 			else {
 				for (auto mesh : StaticMeshs)
 				{
-					mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, mesh->RelativeLocation.Z - VerticalMovementSpeed * DeltaTime));
-					if (mesh->RelativeLocation.Z <= MinZ)
+					mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, mesh->GetRelativeLocation().Z - VerticalMovementSpeed * DeltaTime));
+					if (mesh->GetRelativeLocation().Z <= MinZ)
 					{
 						goingUp = true;
-						mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y, MinZ));
+						mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y, MinZ));
 					}
 				}
 			}
@@ -83,22 +83,22 @@ void AObstacleBase::Tick(float DeltaTime)
 		if (goingLeft) {
 			for (auto mesh : StaticMeshs)
 			{
-				mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y - HorizontalMovementSpeed * DeltaTime, mesh->RelativeLocation.Z));
-				if (mesh->RelativeLocation.Y <= MinY)
+				mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y - HorizontalMovementSpeed * DeltaTime, mesh->GetRelativeLocation().Z));
+				if (mesh->GetRelativeLocation().Y <= MinY)
 				{
 					goingLeft = false;
-					mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, MinY, mesh->RelativeLocation.Z));
+					mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, MinY, mesh->GetRelativeLocation().Z));
 				}
 			}
 		}
 		else {
 			for (auto mesh : StaticMeshs)
 			{
-				mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, mesh->RelativeLocation.Y + HorizontalMovementSpeed * DeltaTime, mesh->RelativeLocation.Z));
-				if (mesh->RelativeLocation.Y >= MaxY)
+				mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, mesh->GetRelativeLocation().Y + HorizontalMovementSpeed * DeltaTime, mesh->GetRelativeLocation().Z));
+				if (mesh->GetRelativeLocation().Y >= MaxY)
 				{
 					goingLeft = true;
-					mesh->SetRelativeLocation(FVector(mesh->RelativeLocation.X, MaxY, mesh->RelativeLocation.Z));
+					mesh->SetRelativeLocation(FVector(mesh->GetRelativeLocation().X, MaxY, mesh->GetRelativeLocation().Z));
 				}
 			}
 		}
